@@ -1,4 +1,4 @@
-# GPS-aided-VINS-Mono-for-autunomous-driving
+# GPS-aided VINS-Mono for autunomous driving
 Project for summenr intern @ THU Autonomous Driving Lab. I'm still working on it.
 
 ## 1.Prerequisites 
