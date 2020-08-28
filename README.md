@@ -33,9 +33,9 @@ Firstly, I incoperate the global_fusion pkg from VINS-Fusion into VINS-Mono and 
 
 Secondly, I use original benchmark_publisher pkg to subscribe the **novatel/inspvax**  and publish the ground truth path. Rviz will subscribe the topic and show the ground truth path with red line.
 
-I have already incorperate this two topic in the urbannav.launch file. So if everything goes right, you could see three line on Rviz.
+I have already incorperate this two topic in the urbannav.launch file. So if everything goes right, you could see three lines on Rviz.
 
-More improvemens using GPS signal to help VINS will be make in a couple of weeks, which includes robust initialization, filter for GPS signal,loss function improvements and robust system failure detection & reinitialization based on autonmous driving senerio. Good luck to myself:)
+More improvemens using GPS signal to help VINS will be make in a couple of weeks, which includes robust initialization, filter for GPS signal,loss function improvements and robust system failure detection & reinitialization based on autonmous driving scenario. Good luck to myself:)
 
 ## 6. Acknowledgements
 This project is mainly based on [VINS-Fusion](https://github.com/HKUST-Aerial-Robotics/VINS-Fusion) and [VINS-Mono](https://ieeexplore.ieee.org/document/8421746/?arnumber=8421746&source=authoralert). I use [ceres solver](http://ceres-solver.org/) for non-linear optimization and [DBoW2](https://github.com/dorian3d/DBoW2) for loop detection, and a generic [camera model](https://github.com/hengli/camodocal).
