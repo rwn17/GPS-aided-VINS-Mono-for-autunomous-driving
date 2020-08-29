@@ -25,7 +25,7 @@ My environment is Ubuntu 18.04, ROS Melodic,OpenCV 3.3.1, Eigen 3.3.1
      roslaunch vins_estimator vins_rviz.launch
      rosbag play YOUR_PATH_TO_DATASET
  ```
- PS: I made a typo on **ubannav.launch**,bug I'm too lazy to correct it :)
+ PS: I made a typo on **ubannav.launch**,but I'm too lazy to correct it :)
  
  ## 5.The modification I made
  
