@@ -22,6 +22,7 @@
 #include <nav_msgs/Path.h>
 #include "LocalCartesian.hpp"
 #include "tic_toc.h"
+#include <opencv2/core/core.hpp>
 
 using namespace std;
 

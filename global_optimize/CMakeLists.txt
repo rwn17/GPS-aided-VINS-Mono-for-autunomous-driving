@@ -14,6 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Ceres REQUIRED)
 
+find_package( OpenCV REQUIRED)
+include_directories( ${OpenCV_DIRS} )
+
 if (NOT TARGET plugin_)
     add_subdirectory(./ThirdParty/GeographicLib/)
 endif()
@@ -32,4 +35,4 @@ add_executable(global_optimize_node
 	src/globalOptNode.cpp
 	src/globalOpt.cpp)
 
-target_link_libraries(global_optimize_node ${catkin_LIBRARIES} ${CERES_LIBRARIES} libGeographicc) 
+target_link_libraries(global_optimize_node ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBS} libGeographicc) 

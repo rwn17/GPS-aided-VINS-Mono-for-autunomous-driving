@@ -154,10 +154,9 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
     path.header.frame_id = "world";
     path.poses.push_back(pose_stamped);
     pub_path.publish(path);
-    cout<<"ground truth xyz is :"<<pose_stamped.pose.position.x<<" "<<pose_stamped.pose.position.y<<" "<<endl;
-
+    cout<<"fuck"<<endl;
     //write ground truth to file 
-    ofstream foutC("/home/weining/summer_intern/vins-mono-catkin_ws/src/VINS-Mono/path_recorder/ground_truth.csv", ios::app);
+    ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/ground_truth.csv", ios::app);
     foutC.setf(ios::fixed, ios::floatfield);
     foutC.precision(0);
     foutC << odom_msg.header.stamp.toSec() << " ";
@@ -169,7 +168,6 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
             << 0 << " "
             << 0 << " "
             << 1 << endl;
-    foutC.close();
 }
 
 int main(int argc, char **argv)

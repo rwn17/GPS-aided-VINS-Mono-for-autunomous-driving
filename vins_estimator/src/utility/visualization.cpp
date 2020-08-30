@@ -146,7 +146,6 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
         odometry.pose.pose.orientation.y = correct_q.y();
         odometry.pose.pose.orientation.z = correct_q.z();
         odometry.pose.pose.orientation.w = correct_q.w();
-
         pose_stamped.pose = odometry.pose.pose;
         relo_path.header = header;
         relo_path.header.frame_id = "world";
@@ -154,7 +153,7 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
         pub_relo_path.publish(relo_path);
 
         // write result to file
-        ofstream foutC("/home/weining/summer_intern/vins-mono-catkin_ws/src/VINS-Mono/path_recorder/VINS_path.csv", ios::app);
+        ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/VINS_path.csv", ios::app);
         foutC.setf(ios::fixed, ios::floatfield);
         foutC.precision(0);
         foutC << header.stamp.toSec() << " ";
@@ -166,7 +165,6 @@ void pubOdometry(const Estimator &estimator, const std_msgs::Header &header)
               << tmp_Q.y() << " "
               << tmp_Q.z() << " "
               << tmp_Q.w() << endl;
-        foutC.close();
     }
 }
 

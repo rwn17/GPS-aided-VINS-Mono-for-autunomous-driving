@@ -24,6 +24,7 @@
 #include <queue>
 #include <mutex>
 
+
 GlobalOptimization globalEstimator(1);
 ros::Publisher pub_global_odometry, pub_global_path, pub_car;
 nav_msgs::Path global_path;
@@ -87,6 +88,10 @@ void GPS_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
 
 void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 {
+
+    Eigen::Vector3d global_t;
+    Eigen:: Quaterniond global_q;
+    globalEstimator.getGlobalOdom(global_t, global_q);
     //printf("vio_callback! \n");
     double t = pose_msg->header.stamp.toSec();
     last_vio_t = t;
@@ -112,19 +117,44 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
         bool test1 = gps_t >= t - 0.1;
         bool test2 = gps_t <= t + 0.1;
         if( (gps_t >= t - 0.1) && (gps_t <= t + 0.1))
-        {
+        {   
+            //add noise for ground truth
+                double latitude = GPS_msg->latitude;
+                double longitude = GPS_msg->longitude;
+                double altitude = GPS_msg->altitude; 
             //printf("receive GPS with timestamp %f\n", GPS_msg->header.stamp.toSec());
-            double latitude = GPS_msg->latitude;
-            double longitude = GPS_msg->longitude;
-            double altitude = GPS_msg->altitude;
+
             //int numSats = GPS_msg->status.service;
             double pos_accuracy = GPS_msg->position_covariance[0];
             if(pos_accuracy <= 0)
                 pos_accuracy = 1;
             //printf("receive covariance %lf \n", pos_accuracy);
             //if(GPS_msg->status.status > 8)
-                globalEstimator.inputGPS(t, latitude, longitude, altitude, pos_accuracy);
+            globalEstimator.inputGPS(t, latitude, longitude, altitude, pos_accuracy);
             gpsQueue.pop();
+            global_path.header.frame_id = "world";
+            accept_origin<< global_t.x(),global_t.y(),global_t.z(),1;
+            media = extrinsicPara * accept_origin;
+            geometry_msgs::PoseStamped global_pose_stamped;
+            global_pose_stamped.pose.position.x = media(0);
+            global_pose_stamped.pose.position.y = media(1);
+            global_pose_stamped.pose.position.z = media(2);
+            global_path.poses.push_back(global_pose_stamped);
+            pub_global_path.publish(global_path);
+                // write result to file
+            std::ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/global_optimize.csv", ios::app);
+            foutC.setf(ios::fixed, ios::floatfield);
+            foutC.precision(0);
+            foutC<<gps_t<<" ";
+            foutC.precision(5);
+            foutC <<media(0)<< " "
+                    << media(1)<< " "
+                    << media(2) << " "
+                    << 0 << " "
+                    << 0 << " "
+                    << 0 << " "
+                    << 1 <<endl;
+            foutC.close();
             break;
         }
         else if(gps_t < t - 0.1)
@@ -134,9 +164,6 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     }
     m_global.unlock();
 
-    Eigen::Vector3d global_t;
-    Eigen:: Quaterniond global_q;
-    globalEstimator.getGlobalOdom(global_t, global_q);
     
 
     //read, extrinsic calibration and publish
@@ -152,31 +179,8 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     odometry.pose.pose.orientation.z = global_q.z();
     odometry.pose.pose.orientation.w = global_q.w();
     pub_global_odometry.publish(odometry);
-    global_path.header.frame_id = "world";
-    accept_origin<< global_t.x(),global_t.y(),global_t.z(),1;
-    media = extrinsicPara * accept_origin;
-    geometry_msgs::PoseStamped global_pose_stamped;
-    global_pose_stamped.pose.position.x = media(0);
-    global_pose_stamped.pose.position.y = media(1);
-    global_pose_stamped.pose.position.z = media(2);
-    global_path.poses.push_back(global_pose_stamped);
-    pub_global_path.publish(global_path);
     publish_car_model(t, global_t, global_q);
     cout<<"global xyz is :"<<media(0)<<" "<<media(1)<<" "<<endl;
-    // write result to file
-    std::ofstream foutC("/home/weining/summer_intern/vins-mono-catkin_ws/src/VINS-Mono/path_recorder/global_optimize.csv", ios::app);
-    foutC.setf(ios::fixed, ios::floatfield);
-    foutC.precision(0);
-    foutC<<odometry.header.stamp.toSec()<<" ";
-    foutC.precision(5);
-    foutC <<media(0)<< " "
-            << media(1)<< " "
-            << media(2) << " "
-            << 0 << " "
-            << 0 << " "
-            << 0 << " "
-            << 1 <<endl;
-    foutC.close();
 }
 
 int main(int argc, char **argv)
