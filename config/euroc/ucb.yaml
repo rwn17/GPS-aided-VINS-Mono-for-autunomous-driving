@@ -1,28 +1,28 @@
 %YAML:1.0
 
 #common parameters
-imu_topic: "/imu/data"
-image_topic: "/camera/image_color"
+imu_topic: "/imu_raw"
+image_topic: "/camera_array/cam0/image_raw/compressed"
 output_path: "/home/weining/summer_intern/vins-mono-catkin_ws/src/VINS-Mono/path_recorder"
 
 #camera calibration 
 model_type: PINHOLE
 camera_name: camera
-image_width: 1920
-image_height: 1200
+image_width: 2048
+image_height: 1536
 distortion_parameters:
-   k1: -0.109203
-   k2:  0.063536
-   p1: -0.003427
-   p2: -0.000629
+   k1: -3.0451652061637519e-01
+   k2: 3.8894492749157322e-02
+   p1: 1.0517466490567872e-03
+   p2: -5.5095449411338973e-04
 projection_parameters:
-   fx: 1086.160899
-   fy: 1090.242963
-   cx: 940.067502
-   cy: 586.740077
+   fx: 1857.4752797615988
+   fy: 1869.2155909761746
+   cx: 1039.692658811044
+   cy: 739.3362262994145
 
 # Extrinsic parameter between IMU and Camera.
-estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
                         # 2  Don't know anything about extrinsic parameters. You don't need to give R,T. We will try to calibrate it. Do some rotation movement at beginning.                        
 #If you choose 0 or 1, you should write down the following matrix.
@@ -31,15 +31,15 @@ extrinsicRotation: !!opencv-matrix
    rows: 3
    cols: 3
    dt: d
-   data: [9.9934608718980233e-01, -1.5715484428488590e-02,-3.2564114721728155e-02, 
-            3.2359037356803094e-02, -1.3131917124154624e-02,9.9939003669937865e-01, 
-            -1.6133527815482926e-02, -9.9979026615676858e-01,-1.2614792047622947e-02]
+   data: [-0.0124894,-0.00473247,0.999911,  
+   0.01299,  -0.999905, -0.00457019, 
+   0.999838, 0.0129318,   0.0125497]
 #Translation from camera frame to imu frame, imu^T_cam
 extrinsicTranslation: !!opencv-matrix
    rows: 3
    cols: 1
    dt: d
-   data: [-1.7434527332030676e-02,1.7171139776467173e-01, -4.5251036141047592e-02]
+   data: [ 0.108802,-0.0238792, -0.336851]
 
 #feature traker paprameters
 max_cnt: 150           # max feature number in feature tracking

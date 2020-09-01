@@ -127,7 +127,17 @@ void GlobalOptimization::optimize()
             double q_array[length][4];
             map<double, vector<double>>::iterator iter;
             iter = globalPoseMap.begin();
-            for (int i = 0; i < length; i++, iter++)
+            int window_length = 50;
+            int window_start;
+            cout<<length<<endl;
+            if (length > 200)
+            { 
+                window_start  = length - window_length - 1;
+                for ( int i = 0; i < window_start; i++,iter++){}
+            }
+            else{ window_start = 0;}
+            cout<<"1st"<<endl;
+            for (int i = window_start; i < length; i++, iter++)
             {
                 t_array[i][0] = iter->second[0];
                 t_array[i][1] = iter->second[1];
@@ -139,10 +149,17 @@ void GlobalOptimization::optimize()
                 problem.AddParameterBlock(q_array[i], 4, local_parameterization);
                 problem.AddParameterBlock(t_array[i], 3);
             }
-
+            cout<<"1.5"<<endl;
             map<double, vector<double>>::iterator iterVIO, iterVIONext, iterGPS;
-            int i = 0;
-            for (iterVIO = localPoseMap.begin(); iterVIO != localPoseMap.end(); iterVIO++, i++)
+            cout<<length<<endl;
+            iterVIO = localPoseMap.begin();
+            if (length > 60)
+            { 
+                for ( int i = 0; i < window_start; i++,iterVIO++){}
+            }
+            cout<<"2nd"<<endl;
+            cout<<window_start<<endl;
+            for (int i = window_start; iterVIO != localPoseMap.end(); iterVIO++, i++)
             {
                 //vio factor
                 iterVIONext = iterVIO;
@@ -229,7 +246,12 @@ void GlobalOptimization::optimize()
             // update global pose
             //mPoseMap.lock();
             iter = globalPoseMap.begin();
-            for (int i = 0; i < length; i++, iter++)
+            if (length > 60)
+            { 
+                for (int i = 0; i < window_start; i++,iter++){}
+            }
+            cout<<"4th"<<endl;
+            for (int i = window_start; i < length; i++, iter++)
             {
             	vector<double> globalPose{t_array[i][0], t_array[i][1], t_array[i][2],
             							  q_array[i][0], q_array[i][1], q_array[i][2], q_array[i][3]};

@@ -35,9 +35,10 @@ Eigen::Matrix4d extrinsicPara;
 Eigen::Vector4d media;
 Eigen::Vector4d accept_origin;
 Eigen::Vector3d transfered_pose;
-float theta = 5.0 / 180 * 3.1415926 ;
+float theta =0 / 180 * 3.1415926;
 float cosTheta = cos(theta);
 float sinTheta = sin(theta);
+double lenth_count = 0;
 
 void publish_car_model(double t, Eigen::Vector3d t_w_car, Eigen::Quaterniond q_w_car)
 {
@@ -109,6 +110,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     m_global.lock();
     while(!gpsQueue.empty())
     {
+
         //获取最老的GPS数据及其时间
         sensor_msgs::NavSatFixConstPtr GPS_msg = gpsQueue.front();
         double gps_t = GPS_msg->header.stamp.toSec();
@@ -117,7 +119,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
         bool test1 = gps_t >= t - 0.1;
         bool test2 = gps_t <= t + 0.1;
         if( (gps_t >= t - 0.1) && (gps_t <= t + 0.1))
-        {   
+        {   lenth_count ++;
             //add noise for ground truth
                 double latitude = GPS_msg->latitude;
                 double longitude = GPS_msg->longitude;
@@ -132,15 +134,33 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
             //if(GPS_msg->status.status > 8)
             globalEstimator.inputGPS(t, latitude, longitude, altitude, pos_accuracy);
             gpsQueue.pop();
-            global_path.header.frame_id = "world";
+            /*
             accept_origin<< global_t.x(),global_t.y(),global_t.z(),1;
             media = extrinsicPara * accept_origin;
             geometry_msgs::PoseStamped global_pose_stamped;
             global_pose_stamped.pose.position.x = media(0);
             global_pose_stamped.pose.position.y = media(1);
             global_pose_stamped.pose.position.z = media(2);
+            */
+            geometry_msgs::PoseStamped global_pose_stamped;
+            global_pose_stamped.pose.position.x = global_t.x();
+            global_pose_stamped.pose.position.y = global_t.y();
+            global_pose_stamped.pose.position.z = global_t.z();
             global_path.poses.push_back(global_pose_stamped);
-            pub_global_path.publish(global_path);
+            if(lenth_count > 100)
+            {
+                for(int i = 0 ; i < 50 ; i++)
+                {
+                    global_path.poses.pop_back();
+                }
+                for(int i = 49;  i > -1 ; i--)
+                {
+                    int _size = globalEstimator.global_path.poses.size();
+                    global_path.poses.push_back(globalEstimator.global_path.poses[_size - i]);
+                }
+                cout<<"size of estimator"<<globalEstimator.global_path.poses.size()<<endl;
+            }
+            pub_global_path.publish(globalEstimator.global_path);
                 // write result to file
             std::ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/global_optimize.csv", ios::app);
             foutC.setf(ios::fixed, ios::floatfield);
@@ -180,7 +200,6 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     odometry.pose.pose.orientation.w = global_q.w();
     pub_global_odometry.publish(odometry);
     publish_car_model(t, global_t, global_q);
-    cout<<"global xyz is :"<<media(0)<<" "<<media(1)<<" "<<endl;
 }
 
 int main(int argc, char **argv)
@@ -188,6 +207,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "global_optimize");
     ros::NodeHandle n("~");
     global_path = globalEstimator.global_path;
+    global_path.header.frame_id = "world";
     extrinsicPara<< cosTheta, -sinTheta, 0, 1, 
                     sinTheta, cosTheta , 0, 0, 
                     0, 0, 1, 0,

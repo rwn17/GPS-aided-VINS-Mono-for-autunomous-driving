@@ -66,9 +66,12 @@ Matrix4d extrinsicPara;
 Vector4d media;
 Vector4d accept_origin;
 Vector3d transfered_pose;
-float theta = 5.0 / 180 * 3.1415926 ;
+float theta = 0 / 180 * 3.1415926 ;
 float cosTheta = cos(theta);
 float sinTheta = sin(theta);
+bool init_flag = true;
+double origin_x,origin_y,origin_z;
+double relative_x,relative_y,relative_z;
 
 void odom_callback(const nav_msgs::Odometry odom_msg)
 {
@@ -126,7 +129,17 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
     odometry.twist.twist.linear.z = tmp_V.z();
     pub_odom.publish(odometry);
     */
-     
+    if (init_flag == true){
+        init_flag = false;
+        origin_x = odom_msg.pose.pose.position.x;
+        origin_y = odom_msg.pose.pose.position.y;
+        origin_z = odom_msg.pose.pose.position.z;
+    }
+    else{
+        relative_x = odom_msg.pose.pose.position.x - origin_x;
+        relative_y = odom_msg.pose.pose.position.y - origin_y;
+        relative_z = odom_msg.pose.pose.position.z - origin_z;
+    }
     extrinsicPara<< cosTheta, -sinTheta,0,1, 
                     sinTheta, cosTheta,0,0, 
                     0, 0, 1,1,
@@ -138,9 +151,9 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
     pub_odom.publish(odometry);
     geometry_msgs::PoseStamped pose_stamped;
 
-    accept_origin<< odom_msg.pose.pose.position.x,
-                    odom_msg.pose.pose.position.y,
-                    odom_msg.pose.pose.position.z,
+    accept_origin<< relative_x,
+                    relative_y,
+                    relative_z,
                     1;
     media = extrinsicPara * accept_origin;
     pose_stamped.pose.position.x = media(0);
@@ -154,7 +167,6 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
     path.header.frame_id = "world";
     path.poses.push_back(pose_stamped);
     pub_path.publish(path);
-    cout<<"fuck"<<endl;
     //write ground truth to file 
     ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/ground_truth.csv", ios::app);
     foutC.setf(ios::fixed, ios::floatfield);
@@ -162,7 +174,7 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
     foutC << odom_msg.header.stamp.toSec() << " ";
     foutC.precision(5);
     foutC << media(0) << " "
-            << media(1)<< " "
+            << media(1) << " "
             << media(2) << " "
             << 0 << " "
             << 0 << " "
