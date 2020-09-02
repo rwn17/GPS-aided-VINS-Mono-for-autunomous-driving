@@ -7,6 +7,7 @@
  * you may not use this file except in compliance with the License.
  *
  * Author: Qin Tong (qintonguav@gmail.com)
+ * Modified by Weining Ren(weining.ren17@gmail.com)
  *******************************************************/
 
 #include "globalOpt.h"
@@ -39,7 +40,7 @@ void GlobalOptimization::GPS2XYZ(double latitude, double longitude, double altit
 }
 
 void GlobalOptimization::inputOdom(double t, Eigen::Vector3d OdomP, Eigen::Quaterniond OdomQ)
-{
+{   
 	mPoseMap.lock();
     vector<double> localPose{OdomP.x(), OdomP.y(), OdomP.z(), 
     					     OdomQ.w(), OdomQ.x(), OdomQ.y(), OdomQ.z()};
@@ -55,8 +56,6 @@ void GlobalOptimization::inputOdom(double t, Eigen::Vector3d OdomP, Eigen::Quate
     lastP = globalP;
     lastQ = globalQ;
     //把最新的位置姿插入轨迹中
-
-
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time(t);
     pose_stamped.header.frame_id = "world";
@@ -128,15 +127,12 @@ void GlobalOptimization::optimize()
             map<double, vector<double>>::iterator iter;
             iter = globalPoseMap.begin();
             int window_length = 50;
-            int window_start;
-            cout<<length<<endl;
-            if (length > 200)
+            int window_start = 0;
+            if (length > 200 && isSlidingWindow)
             { 
                 window_start  = length - window_length - 1;
                 for ( int i = 0; i < window_start; i++,iter++){}
             }
-            else{ window_start = 0;}
-            cout<<"1st"<<endl;
             for (int i = window_start; i < length; i++, iter++)
             {
                 t_array[i][0] = iter->second[0];
@@ -149,16 +145,12 @@ void GlobalOptimization::optimize()
                 problem.AddParameterBlock(q_array[i], 4, local_parameterization);
                 problem.AddParameterBlock(t_array[i], 3);
             }
-            cout<<"1.5"<<endl;
             map<double, vector<double>>::iterator iterVIO, iterVIONext, iterGPS;
-            cout<<length<<endl;
             iterVIO = localPoseMap.begin();
-            if (length > 60)
+            if (length > 200 && isSlidingWindow)
             { 
                 for ( int i = 0; i < window_start; i++,iterVIO++){}
             }
-            cout<<"2nd"<<endl;
-            cout<<window_start<<endl;
             for (int i = window_start; iterVIO != localPoseMap.end(); iterVIO++, i++)
             {
                 //vio factor
@@ -178,7 +170,11 @@ void GlobalOptimization::optimize()
                     Eigen::Quaterniond iQj;
                     iQj = iTj.block<3, 3>(0, 0);
                     Eigen::Vector3d iPj = iTj.block<3, 1>(0, 3);
-
+                    if ( iPj.norm() > 3)
+                    {
+                        iPj = Eigen::Vector3d(0,0,0);
+                        iQj = Eigen::Quaterniond(1,0,0,0);
+                    }
                     ceres::CostFunction* vio_function = RelativeRTError::Create(iPj.x(), iPj.y(), iPj.z(),
                                                                                 iQj.w(), iQj.x(), iQj.y(), iQj.z(),
                                                                                 0.1, 0.01);
@@ -250,7 +246,6 @@ void GlobalOptimization::optimize()
             { 
                 for (int i = 0; i < window_start; i++,iter++){}
             }
-            cout<<"4th"<<endl;
             for (int i = window_start; i < length; i++, iter++)
             {
             	vector<double> globalPose{t_array[i][0], t_array[i][1], t_array[i][2],

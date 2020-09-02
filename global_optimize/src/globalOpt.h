@@ -47,11 +47,11 @@ private:
 	map<double, vector<double>> GPSPositionMap;
 	bool initGPS;
 	bool newGPS;
+	bool isSlidingWindow = 1;
 	GeographicLib::LocalCartesian geoConverter;
 	std::mutex mPoseMap;
 	Eigen::Matrix4d WGPS_T_WVIO;
 	Eigen::Vector3d lastP;
 	Eigen::Quaterniond lastQ;
 	std::thread threadOpt;
-
 };

@@ -663,12 +663,12 @@ bool Estimator::failureDetection()
     }
     */
     Vector3d tmp_P = Ps[WINDOW_SIZE];
-    if ((tmp_P - last_P).norm() > 10)
+    if ((tmp_P - last_P).norm() > 6)
     {
         ROS_INFO(" big translation");
         return true;
     }
-    if (abs(tmp_P.z() - last_P.z()) > 5)
+    if (abs(tmp_P.z() - last_P.z()) > 3)
     {
         ROS_INFO(" big z translation");
         return true;
