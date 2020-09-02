@@ -30,6 +30,7 @@ ros::Publisher pub_global_odometry, pub_global_path, pub_car;
 nav_msgs::Path global_path;
 double last_vio_t = -1;
 std::queue<sensor_msgs::NavSatFixConstPtr> gpsQueue;
+std::queue<nav_msgs::Odometry::ConstPtr> vioQueue;
 std::mutex m_global;
 Eigen::Matrix4d extrinsicPara;
 Eigen::Vector4d media;
@@ -39,7 +40,9 @@ float theta =0 / 180 * 3.1415926;
 float cosTheta = cos(theta);
 float sinTheta = sin(theta);
 double lenth_count = 0;
-bool isRestart = false;
+bool isInitial = false;
+double last_gps_t = 0;
+
 
 void publish_car_model(double t, Eigen::Vector3d t_w_car, Eigen::Quaterniond q_w_car)
 {
@@ -90,37 +93,57 @@ void GPS_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
 
 void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 {
-
+    vioQueue.push(pose_msg);
+    nav_msgs::Odometry::ConstPtr first_pose = vioQueue.front();
+    double t = first_pose->header.stamp.toSec(); 
+    if (!isInitial)
+    {
+        while(!gpsQueue.empty())
+        {
+            sensor_msgs::NavSatFixConstPtr GPS_msg = gpsQueue.front();
+            double gps_t = GPS_msg->header.stamp.toSec();
+            printf(" initial vio t: %f, gps t: %f \n", t, gps_t);
+            // 100ms sync tolerance
+            if(gps_t >= t - 0.1)
+            {
+                cout<<"global_init finished!"<<endl;
+                isInitial = true;
+                break;
+            }
+            else if(gps_t < t - 0.1){
+                gpsQueue.pop();
+            }
+        }
+        return;
+    }
     Eigen::Vector3d global_t;
     Eigen:: Quaterniond global_q;
     globalEstimator.getGlobalOdom(global_t, global_q);
     //printf("vio_callback! \n");
-    double t = pose_msg->header.stamp.toSec();
     last_vio_t = t;
     //获取VIO输出pose
-    Eigen::Vector3d vio_t(pose_msg->pose.pose.position.x, pose_msg->pose.pose.position.y, pose_msg->pose.pose.position.z);
+    Eigen::Vector3d vio_t(first_pose->pose.pose.position.x, first_pose->pose.pose.position.y, first_pose->pose.pose.position.z);
     Eigen::Quaterniond vio_q;
-    vio_q.w() = pose_msg->pose.pose.orientation.w;
-    vio_q.x() = pose_msg->pose.pose.orientation.x;
-    vio_q.y() = pose_msg->pose.pose.orientation.y;
-    vio_q.z() = pose_msg->pose.pose.orientation.z;
+    vio_q.w() = first_pose->pose.pose.orientation.w;
+    vio_q.x() = first_pose->pose.pose.orientation.x;
+    vio_q.y() = first_pose->pose.pose.orientation.y;
+    vio_q.z() = first_pose->pose.pose.orientation.z;
     //传入global estimator
     globalEstimator.inputOdom(t, vio_t, vio_q);
-
 
     m_global.lock();
     while(!gpsQueue.empty())
     {
-
         //获取最老的GPS数据及其时间
         sensor_msgs::NavSatFixConstPtr GPS_msg = gpsQueue.front();
         double gps_t = GPS_msg->header.stamp.toSec();
-        //printf("vio t: %f, gps t: %f \n", t, gps_t);
-        // 10ms sync tolerance
-        bool test1 = gps_t >= t - 0.1;
-        bool test2 = gps_t <= t + 0.1;
+        printf("vio t: %f, gps t: %f \n", t, gps_t);
+        // 100ms sync tolerance
         if( (gps_t >= t - 0.1) && (gps_t <= t + 0.1))
-        {   lenth_count ++;
+        {   
+            last_gps_t = gps_t;
+            cout<<"2nd "<<endl;
+            lenth_count ++;
             //add noise for ground truth
                 double latitude = GPS_msg->latitude;
                 double longitude = GPS_msg->longitude;
@@ -132,9 +155,10 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
             if(pos_accuracy <= 0)
                 pos_accuracy = 1;
             //printf("receive covariance %lf \n", pos_accuracy);
-            //if(GPS_msg->status.status > 8)
+            //if(GPS_msg->status.status > 8);
             globalEstimator.inputGPS(t, latitude, longitude, altitude, pos_accuracy);
             gpsQueue.pop();
+            vioQueue.pop();
             /*
             accept_origin<< global_t.x(),global_t.y(),global_t.z(),1;
             media = extrinsicPara * accept_origin;
@@ -148,7 +172,6 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
             global_pose_stamped.pose.position.z = global_t.z();
             global_path.poses.push_back(global_pose_stamped);
             */
-            pub_global_path.publish(globalEstimator.global_path);
                 // write result to file
             std::ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/global_optimize.csv", ios::app);
             foutC.setf(ios::fixed, ios::floatfield);
@@ -163,12 +186,17 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
                     << 0 << " "
                     << 1 <<endl;
             foutC.close();
+            pub_global_path.publish(globalEstimator.global_path);
             break;
         }
-        else if(gps_t < t - 0.1)
+        else if(gps_t < t - 0.1){
             gpsQueue.pop();
-        else if(gps_t > t + 0.1)
+        }
+            
+        else if(gps_t > t + 0.1){
+            vioQueue.pop();
             break;
+        }
     }
     m_global.unlock();
 
@@ -200,8 +228,8 @@ int main(int argc, char **argv)
                     0, 0, 0, 1;
 
 
-    ros::Subscriber sub_GPS = n.subscribe("/navsat/fix", 100, GPS_callback);
-    ros::Subscriber sub_vio = n.subscribe("/vins_estimator/odometry", 100, vio_callback);
+    ros::Subscriber sub_GPS = n.subscribe("/ublox_node/fix", 100, GPS_callback);
+    ros::Subscriber sub_vio = n.subscribe("/vins_estimator/odometry", 1000, vio_callback);
     pub_global_path = n.advertise<nav_msgs::Path>("global_path", 100);
     pub_global_odometry = n.advertise<nav_msgs::Odometry>("global_odometry", 100);
     pub_car = n.advertise<visualization_msgs::MarkerArray>("car_model", 1000);
