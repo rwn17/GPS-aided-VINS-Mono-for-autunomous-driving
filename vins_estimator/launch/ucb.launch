@@ -26,5 +26,5 @@
     <node name="benchmark_publisher" pkg="benchmark_publisher" type="benchmark_publisher" output="screen">
         <remap from="~estimated_odometry" to="/vins_estimator/odometry" />
     </node>
-
+    <node name="republish" type="republish" pkg="image_transport" output="screen" args="compressed in:=/camera_array/cam0/image_raw/compressed raw out:= /camera/image_color" />
 </launch>

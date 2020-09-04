@@ -2,7 +2,7 @@
 
 #common parameters
 imu_topic: "/imu_raw"
-image_topic: "/camera_array/cam0/image_raw/compressed"
+image_topic: "/camera/imgage_color"
 output_path: "/home/weining/summer_intern/vins-mono-catkin_ws/src/VINS-Mono/path_recorder"
 
 #camera calibration 
@@ -32,8 +32,8 @@ extrinsicRotation: !!opencv-matrix
    cols: 3
    dt: d
    data: [-0.0124894,-0.00473247,0.999911,  
-   0.01299,  -0.999905, -0.00457019, 
-   0.999838, 0.0129318,   0.0125497]
+            0.01299,-0.999905,-0.00457019, 
+            0.999838,0.0129318,0.0125497]
 #Translation from camera frame to imu frame, imu^T_cam
 extrinsicTranslation: !!opencv-matrix
    rows: 3

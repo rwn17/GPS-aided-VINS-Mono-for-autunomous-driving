@@ -103,7 +103,7 @@ struct RelativeRTError
 									   const double t_var, const double q_var) 
 	{
 	  return (new ceres::AutoDiffCostFunction<
-	          RelativeRTError, 6, 4, 3, 4, 3>(
+	          RelativeRTError, 6, 4, 3, 4, 3 >(
 	          	new RelativeRTError(t_x, t_y, t_z, q_w, q_x, q_y, q_z, t_var, q_var)));
 	}
 
