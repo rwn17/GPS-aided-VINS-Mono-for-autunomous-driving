@@ -142,7 +142,6 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
         if( (gps_t >= t - 0.1) && (gps_t <= t + 0.1))
         {   
             last_gps_t = gps_t;
-            cout<<"2nd "<<endl;
             lenth_count ++;
             //add noise for ground truth
                 double latitude = GPS_msg->latitude;

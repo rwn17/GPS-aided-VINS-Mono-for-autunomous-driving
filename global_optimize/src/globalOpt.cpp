@@ -88,7 +88,7 @@ void GlobalOptimization::inputGPS(double t, double latitude, double longitude, d
     {
         xyz[0] = xyz[0] + rng.gaussian ( w_sigma );
         xyz[1] = xyz[1] + rng.gaussian ( w_sigma );
-        xyz[2] = 3 * rng.gaussian ( w_sigma );
+        xyz[2] = xyz[2] * rng.gaussian ( w_sigma );
     }
 	vector<double> tmp{xyz[0], xyz[1], xyz[2], posAccuracy};
     printf("new gps: t: %f x: %f y: %f z:%f accura:%f \n", t, tmp[0], tmp[1], tmp[2],posAccuracy);
@@ -127,7 +127,7 @@ void GlobalOptimization::optimize()
             double k[length];
             map<double, vector<double>>::iterator iter;
             iter = globalPoseMap.begin();
-            int window_length = 150;
+            int window_length = 50;
             int window_start = 0;
             if (length > 200 && isSlidingWindow)
             { 
@@ -172,7 +172,7 @@ void GlobalOptimization::optimize()
                     Eigen::Quaterniond iQj;
                     iQj = iTj.block<3, 3>(0, 0);
                     Eigen::Vector3d iPj = iTj.block<3, 1>(0, 3);
-                    if ( iPj.norm() > 3)
+                    if ( iPj.norm() > 10)
                     {
                         iPj = Eigen::Vector3d(0,0,0);
                         iQj = Eigen::Quaterniond(1,0,0,0);
