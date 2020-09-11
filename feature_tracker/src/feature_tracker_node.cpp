@@ -52,11 +52,6 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
     last_image_time = img_msg->header.stamp.toSec();
     // frequency control
     
-    cout<<"FREQ is "<<FREQ<<endl;
-    cout<<"firs image _time :"<<first_image_time<<endl;
-    cout<<"pub count is:"<<pub_count<<endl;
-    cout<<"img msg time"<<img_msg->header.stamp.toSec()<<endl;
-    
     if (round(1.0 * pub_count / (img_msg->header.stamp.toSec() - first_image_time)) <= FREQ)
     {
         PUB_THIS_FRAME = true;
@@ -252,7 +247,6 @@ void compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &img_msg
     }
     else
         PUB_THIS_FRAME = false;
-
     cv_bridge::CvImageConstPtr ptr;
     /*
     if (img_msg->encoding == "8UC1")
@@ -273,9 +267,10 @@ void compressed_img_callback(const sensor_msgs::CompressedImageConstPtr &img_msg
     TicToc t_r;
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        ROS_DEBUG("processing camera %d", i);
-        if (i != 1 || !STEREO_TRACK)
+        if (i != 1 || !STEREO_TRACK){
             trackerData[i].readImage(ptr->image.rowRange(ROW * i, ROW * (i + 1)), ros::Time::now().toSec());
+        }
+
         else
         {
             if (EQUALIZE)

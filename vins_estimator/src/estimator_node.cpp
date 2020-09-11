@@ -338,7 +338,6 @@ void process()
 
 int main(int argc, char **argv)
 {
-    cout<<"estimator is here"<<endl;
     ros::init(argc, argv, "vins_estimator");
     ros::NodeHandle n("~");
     ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);

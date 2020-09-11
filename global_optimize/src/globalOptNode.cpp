@@ -137,7 +137,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
         //获取最老的GPS数据及其时间
         sensor_msgs::NavSatFixConstPtr GPS_msg = gpsQueue.front();
         double gps_t = GPS_msg->header.stamp.toSec();
-        printf("vio t: %f, gps t: %f \n", t, gps_t);
+        //printf("vio t: %f, gps t: %f \n", t, gps_t);
         // 100ms sync tolerance
         if( (gps_t >= t - 0.1) && (gps_t <= t + 0.1))
         {   
@@ -177,9 +177,9 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
             foutC.precision(0);
             foutC<<gps_t<<" ";
             foutC.precision(5);
-            foutC <<media(0)<< " "
-                    << media(1)<< " "
-                    << media(2) << " "
+            foutC <<globalEstimator.global_path.poses.back().pose.position.x<< " "
+                    << globalEstimator.global_path.poses.back().pose.position.y<< " "
+                    << globalEstimator.global_path.poses.back().pose.position.z << " "
                     << 0 << " "
                     << 0 << " "
                     << 0 << " "

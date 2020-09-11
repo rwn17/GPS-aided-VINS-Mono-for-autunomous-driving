@@ -663,7 +663,7 @@ bool Estimator::failureDetection()
     }
     */
     Vector3d tmp_P = Ps[WINDOW_SIZE];
-    if ((tmp_P - last_P).norm() > 6)
+    if ((tmp_P - last_P).norm() > 10)
     {
         ROS_INFO(" big translation");
         return true;
@@ -718,6 +718,12 @@ void Estimator::optimization()
     }
 
     TicToc t_whole, t_prepare;
+    /*
+    for (int i = 0; i < WINDOW_SIZE; i++)
+    {
+        cout<<"Vs["<<i<<"] is :"<<Vs[i]<<endl;
+    }
+    */
     vector2double();
 
     if (last_marginalization_info)

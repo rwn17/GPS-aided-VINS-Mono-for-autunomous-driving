@@ -12,6 +12,13 @@ find_package(catkin REQUIRED COMPONENTS
     )
 
 catkin_package()
+
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+  ${CERES_INCLUDE_DIRS}
+  /home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/global_optimize/ThirdParty/GeographicLib/include
+)
+
 include_directories(${catkin_INCLUDE_DIRS}) 
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -25,4 +32,4 @@ add_executable(benchmark_publisher
     src/benchmark_publisher_node.cpp
     )
 
-target_link_libraries(benchmark_publisher ${catkin_LIBRARIES})
+target_link_libraries(benchmark_publisher ${catkin_LIBRARIES} libGeographicc)

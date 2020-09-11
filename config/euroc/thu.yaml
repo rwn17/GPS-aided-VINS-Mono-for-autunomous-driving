@@ -1,28 +1,28 @@
 %YAML:1.0
 
 #common parameters
-imu_topic: "/imu_raw"
-image_topic: "/camera_array/cam0/image_raw/compressed"
-output_path: "/home/weining/summer_intern/vins-mono-catkin_ws/src/VINS-Mono/path_recorder"
+imu_topic: "/imu/data"
+image_topic: "/usb_cam_left/image_raw/compressed"
+output_path: "/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder"
 
 #camera calibration 
 model_type: PINHOLE
 camera_name: camera
-image_width: 2048
-image_height: 1536
+image_width: 1920
+image_height: 1080
 distortion_parameters:
-   k1: -3.0451652061637519e-01
-   k2: 3.8894492749157322e-02
-   p1: 1.0517466490567872e-03
-   p2: -5.5095449411338973e-04
+   k1: -0.1161
+   k2: 0.1685
+   p1: 0
+   p2: 0
 projection_parameters:
-   fx: 1857.4752797615988
-   fy: 1869.2155909761746
-   cx: 1039.692658811044
-   cy: 739.3362262994145
+   fx: 1917.25
+   fy: 1917.25
+   cx: 960.975
+   cy: 470.15
 
 # Extrinsic parameter between IMU and Camera.
-estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
                         # 2  Don't know anything about extrinsic parameters. You don't need to give R,T. We will try to calibrate it. Do some rotation movement at beginning.                        
 #If you choose 0 or 1, you should write down the following matrix.
@@ -31,15 +31,15 @@ extrinsicRotation: !!opencv-matrix
    rows: 3
    cols: 3
    dt: d
-   data: [-0.0124894,-0.00473247,0.999911,  
-            0.01299,-0.999905,-0.00457019, 
-            0.999838,0.0129318,0.0125497]
+   data: [0, 0, 1, 
+          1, 0,0, 
+          0, 1,0]
 #Translation from camera frame to imu frame, imu^T_cam
 extrinsicTranslation: !!opencv-matrix
    rows: 3
    cols: 1
    dt: d
-   data: [ 0.108802,-0.0238792, -0.336851]
+   data: [1.8,0.4,-0.7]
 
 #feature traker paprameters
 max_cnt: 200           # max feature number in feature tracking
@@ -51,15 +51,15 @@ equalize: 1             # if image is too dark or light, trun on equalize to fin
 fisheye: 0              # if using fisheye, trun on it. A circle mask will be loaded to remove edge noisy points
 
 #optimization parameters
-max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time
-max_num_iterations: 8   # max solver itrations, to guarantee real time
+max_solver_time: 1  # max solver itration time (ms), to guarantee real time
+max_num_iterations: 50   # max solver itrations, to guarantee real time
 keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
 
 #imu parameters       The more accurate parameters you provide, the better performance
-acc_n: 8.133e-3          # accelerometer measurement noise standard deviation. #0.2   0.04
-gyr_n: 7.43e-3        # gyroscope measurement noise standard deviation.     #0.05  0.004
-acc_w: 1.212e-4         # accelerometer bias random work noise standard deviation.  #0.02
-gyr_w: 8.66e-5      # gyroscope bias random work noise standard deviation.     #4.0e-5
+acc_n: 0.1          # accelerometer measurement noise standard deviation. #0.2   0.04
+gyr_n: 0.05        # gyroscope measurement noise standard deviation.     #0.05  0.004
+acc_w: 0.005         # accelerometer bias random work noise standard deviation.  #0.02
+gyr_w: 0.005      # gyroscope bias random work noise standard deviation.     #4.0e-5
 g_norm: 9.81007     # gravity magnitude
 
 #loop closure parameters

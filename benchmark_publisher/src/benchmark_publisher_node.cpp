@@ -3,10 +3,12 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tf/transform_broadcaster.h>
 #include <fstream>
 #include <eigen3/Eigen/Dense>
+#include "LocalCartesian.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -14,6 +16,10 @@ using namespace Eigen;
 const int SKIP = 50;
 string benchmark_output_path;
 string estimate_output_path;
+bool isOdom = 0;
+GeographicLib::LocalCartesian geoConverter;
+bool initGPS = 0;
+
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
 {
@@ -75,60 +81,7 @@ double relative_x,relative_y,relative_z;
 
 void odom_callback(const nav_msgs::Odometry odom_msg)
 {
-    
-    //ROS_INFO("odom callback!");
-    /*
-    if (odom_msg->header.stamp.toSec() > benchmark.back().t)
-      return;
-  
-    for (; idx < static_cast<int>(benchmark.size()) && benchmark[idx].t <= odom_msg->header.stamp.toSec(); idx++)
-        ;
-
-
-    if (init++ < SKIP)
-    {
-        baseRgt = Quaterniond(odom_msg->pose.pose.orientation.w,
-                              odom_msg->pose.pose.orientation.x,
-                              odom_msg->pose.pose.orientation.y,
-                              odom_msg->pose.pose.orientation.z) *
-                  Quaterniond(benchmark[idx - 1].qw,
-                              benchmark[idx - 1].qx,
-                              benchmark[idx - 1].qy,
-                              benchmark[idx - 1].qz).inverse();
-        baseTgt = Vector3d{odom_msg->pose.pose.position.x,
-                           odom_msg->pose.pose.position.y,
-                           odom_msg->pose.pose.position.z} -
-                  baseRgt * Vector3d{benchmark[idx - 1].px, benchmark[idx - 1].py, benchmark[idx - 1].pz};
-        return;
-    }
-
-    nav_msgs::Odometry odometry;
-    odometry.header.stamp = ros::Time(benchmark[idx - 1].t);
-    odometry.header.frame_id = "world";
-    odometry.child_frame_id = "world";
-
-    Vector3d tmp_T = baseTgt + baseRgt * Vector3d{benchmark[idx - 1].px, benchmark[idx - 1].py, benchmark[idx - 1].pz};
-    odometry.pose.pose.position.x = tmp_T.x();
-    odometry.pose.pose.position.y = tmp_T.y();
-    odometry.pose.pose.position.z = tmp_T.z();
-
-    Quaterniond tmp_R = baseRgt * Quaterniond{benchmark[idx - 1].qw,
-                                              benchmark[idx - 1].qx,
-                                              benchmark[idx - 1].qy,
-                                              benchmark[idx - 1].qz};
-    odometry.pose.pose.orientation.w = tmp_R.w();
-    odometry.pose.pose.orientation.x = tmp_R.x();
-    odometry.pose.pose.orientation.y = tmp_R.y();
-    odometry.pose.pose.orientation.z = tmp_R.z();
-
-    Vector3d tmp_V = baseRgt * Vector3d{benchmark[idx - 1].vx,
-                                        benchmark[idx - 1].vy,
-                                        benchmark[idx - 1].vz};
-    odometry.twist.twist.linear.x = tmp_V.x();
-    odometry.twist.twist.linear.y = tmp_V.y();
-    odometry.twist.twist.linear.z = tmp_V.z();
-    pub_odom.publish(odometry);
-    */
+ 
     if (init_flag == true){
         init_flag = false;
         origin_x = odom_msg.pose.pose.position.x;
@@ -182,6 +135,54 @@ void odom_callback(const nav_msgs::Odometry odom_msg)
             << 1 << endl;
 }
 
+void gps_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
+{
+    double latitude = GPS_msg->latitude;
+    double longitude = GPS_msg->longitude;
+    double altitude = GPS_msg->altitude; 
+    double position[3];
+    if(!initGPS)
+    {
+        geoConverter.Reset(latitude, longitude, altitude);
+        initGPS = true;
+    }
+    geoConverter.Forward(latitude, longitude, altitude, position[0], position[1], position[2]);
+    extrinsicPara<< cosTheta, -sinTheta,0,1, 
+                    sinTheta, cosTheta,0,0, 
+                    0, 0, 1,1,
+                    0,0,0,1;
+    geometry_msgs::PoseStamped pose_stamped;
+    accept_origin<< position[0],
+                    position[1],
+                    position[2],
+                    1;
+    media = extrinsicPara * accept_origin;
+    pose_stamped.pose.position.x = media(0);
+    pose_stamped.pose.position.y = media(1);
+    pose_stamped.pose.position.z = media(2);
+    //pose_stamped.pose = odom_msg.pose.pose;
+    pose_stamped.header = GPS_msg->header;
+    //pose_stamped.header.frame_id = "world";
+    //pose_stamped.child_frame_id = "world";
+    path.header = GPS_msg->header;
+    path.header.frame_id = "world";
+    path.poses.push_back(pose_stamped);
+    pub_path.publish(path);
+    //write ground truth to file 
+    ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/ground_truth.csv", ios::app);
+    foutC.setf(ios::fixed, ios::floatfield);
+    foutC.precision(0);
+    foutC << GPS_msg->header.stamp.toSec() << " ";
+    foutC.precision(5);
+    foutC << media(0) << " "
+            << media(1) << " "
+            << media(2) << " "
+            << 0 << " "
+            << 0 << " "
+            << 0 << " "
+            << 1 << endl;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "benchmark_publisher");
@@ -209,8 +210,15 @@ int main(int argc, char **argv)
     */
     pub_odom = n.advertise<nav_msgs::Odometry>("odometry", 1000);
     pub_path = n.advertise<nav_msgs::Path>("path", 1000);
-
-    ros::Subscriber sub_odom = n.subscribe("/navsat/odom", 1000, odom_callback);
+    ros::Subscriber sub_fix;
+    if(isOdom == 1){
+        sub_fix = n.subscribe("/navsat/odom", 1000, odom_callback);
+    }
+    else
+    {
+        cout<<"use fix"<<endl;
+        sub_fix = n.subscribe("/gps/fix",1000, gps_callback);
+    }
     
     ros::Rate r(20);
     ros::spin();

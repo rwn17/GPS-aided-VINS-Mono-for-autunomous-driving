@@ -91,7 +91,7 @@ void GlobalOptimization::inputGPS(double t, double latitude, double longitude, d
         xyz[2] = xyz[2] * rng.gaussian ( w_sigma );
     }
 	vector<double> tmp{xyz[0], xyz[1], xyz[2], posAccuracy};
-    printf("new gps: t: %f x: %f y: %f z:%f accura:%f \n", t, tmp[0], tmp[1], tmp[2],posAccuracy);
+    //printf("new gps: t: %f x: %f y: %f z:%f accura:%f \n", t, tmp[0], tmp[1], tmp[2],posAccuracy);
 	GPSPositionMap[t] = tmp;
     newGPS = true;
 

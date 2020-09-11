@@ -82,8 +82,11 @@ void printStatistics(const Estimator &estimator, double t)
             eigen_R = estimator.ric[i];
             eigen_T = estimator.tic[i];
             cv::Mat cv_R, cv_T;
+            cout<<cv_R<<endl;
             cv::eigen2cv(eigen_R, cv_R);
             cv::eigen2cv(eigen_T, cv_T);
+            //cout<<"extrinsic para is"<<cv_R<<endl;
+            //cout<<"translation is "<<cv_T<<endl;
             fs << "extrinsicRotation" << cv_R << "extrinsicTranslation" << cv_T;
             fs.release();
         }
