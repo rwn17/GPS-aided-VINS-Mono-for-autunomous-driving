@@ -26,7 +26,7 @@ int pub_count = 1;
 bool first_image_flag = true;
 double last_image_time = 0;
 bool init_pub = 0;
-bool isCompressed = 1;
+bool isCompressed = 0;
 
 void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
 {
@@ -66,7 +66,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
         PUB_THIS_FRAME = false;
 
     cv_bridge::CvImageConstPtr ptr;
-    cout<<img_msg->encoding<<endl;
+    //cout<<img_msg->encoding<<endl;
     if (img_msg->encoding == "8UC1")
     {
         sensor_msgs::Image img;
@@ -85,7 +85,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
     TicToc t_r;
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        ROS_DEBUG("processing camera %d", i);
+        //ROS_DEBUG("processing camera %d", i);
         if (i != 1 || !STEREO_TRACK)
             trackerData[i].readImage(ptr->image.rowRange(ROW * i, ROW * (i + 1)), img_msg->header.stamp.toSec());
         else

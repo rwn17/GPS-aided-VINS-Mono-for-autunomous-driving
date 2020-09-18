@@ -663,12 +663,12 @@ bool Estimator::failureDetection()
     }
     */
     Vector3d tmp_P = Ps[WINDOW_SIZE];
-    if ((tmp_P - last_P).norm() > 10)
+    if ((tmp_P - last_P).norm() >5)
     {
         ROS_INFO(" big translation");
         return true;
     }
-    if (abs(tmp_P.z() - last_P.z()) > 3)
+    if (abs(tmp_P.z() - last_P.z()) > 1)
     {
         ROS_INFO(" big z translation");
         return true;
@@ -691,8 +691,8 @@ void Estimator::optimization()
 {
     ceres::Problem problem;
     ceres::LossFunction *loss_function;
-    //loss_function = new ceres::HuberLoss(1.0);
-    loss_function = new ceres::CauchyLoss(1.0);
+    loss_function = new ceres::HuberLoss(1.0);
+    //loss_function = new ceres::SoftLOneLoss(1.0);
     for (int i = 0; i < WINDOW_SIZE + 1; i++)
     {
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();

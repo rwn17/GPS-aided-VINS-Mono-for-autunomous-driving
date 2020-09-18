@@ -147,9 +147,9 @@ void gps_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
         initGPS = true;
     }
     geoConverter.Forward(latitude, longitude, altitude, position[0], position[1], position[2]);
-    extrinsicPara<< cosTheta, -sinTheta,0,1, 
+    extrinsicPara<< cosTheta, -sinTheta,0,0, 
                     sinTheta, cosTheta,0,0, 
-                    0, 0, 1,1,
+                    0, 0, 1,0,
                     0,0,0,1;
     geometry_msgs::PoseStamped pose_stamped;
     accept_origin<< position[0],
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
     else
     {
         cout<<"use fix"<<endl;
-        sub_fix = n.subscribe("/gps/fix",1000, gps_callback);
+        sub_fix = n.subscribe("/navsat/fix",1000, gps_callback);
     }
     
     ros::Rate r(20);

@@ -82,13 +82,13 @@ void GlobalOptimization::inputGPS(double t, double latitude, double longitude, d
 {
 	double xyz[3];
 	GPS2XYZ(latitude, longitude, altitude, xyz);
-    double w_sigma = 3;
+    double w_sigma = 0;
     cv::RNG rng;
     if(1)
     {
         xyz[0] = xyz[0] + rng.gaussian ( w_sigma );
         xyz[1] = xyz[1] + rng.gaussian ( w_sigma );
-        xyz[2] = xyz[2] * rng.gaussian ( w_sigma );
+        xyz[2] = 0 * rng.gaussian ( w_sigma );
     }
 	vector<double> tmp{xyz[0], xyz[1], xyz[2], posAccuracy};
     //printf("new gps: t: %f x: %f y: %f z:%f accura:%f \n", t, tmp[0], tmp[1], tmp[2],posAccuracy);
@@ -112,7 +112,7 @@ void GlobalOptimization::optimize()
             options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
             //options.minimizer_progress_to_stdout = true;
             //options.max_solver_time_in_seconds = SOLVER_TIME * 3;
-            options.max_num_iterations = 5;
+            options.max_num_iterations = 20;
             ceres::Solver::Summary summary;
             ceres::LossFunction *loss_function;
             loss_function = new ceres::HuberLoss(1.0);
@@ -127,9 +127,9 @@ void GlobalOptimization::optimize()
             double k[length];
             map<double, vector<double>>::iterator iter;
             iter = globalPoseMap.begin();
-            int window_length = 50;
+            int window_length = 250;
             int window_start = 0;
-            if (length > 200 && isSlidingWindow)
+            if (length > 300 && isSlidingWindow)
             { 
                 window_start  = length - window_length - 1;
                 for ( int i = 0; i < window_start; i++,iter++){}
@@ -149,7 +149,7 @@ void GlobalOptimization::optimize()
             }
             map<double, vector<double>>::iterator iterVIO, iterVIONext, iterGPS;
             iterVIO = localPoseMap.begin();
-            if (length > 200 && isSlidingWindow)
+            if (length > 300 && isSlidingWindow)
             { 
                 for ( int i = 0; i < window_start; i++,iterVIO++){}
             }
@@ -240,7 +240,7 @@ void GlobalOptimization::optimize()
             // update global pose
             //mPoseMap.lock();
             iter = globalPoseMap.begin();
-            if (length > 60)
+            if (length > 300)
             { 
                 for (int i = 0; i < window_start; i++,iter++){}
             }

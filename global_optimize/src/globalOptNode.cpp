@@ -32,6 +32,7 @@ double last_vio_t = -1;
 std::queue<sensor_msgs::NavSatFixConstPtr> gpsQueue;
 std::queue<nav_msgs::Odometry::ConstPtr> vioQueue;
 std::mutex m_global;
+std::mutex vio_lock;
 Eigen::Matrix4d extrinsicPara;
 Eigen::Vector4d media;
 Eigen::Vector4d accept_origin;
@@ -93,7 +94,9 @@ void GPS_callback(const sensor_msgs::NavSatFixConstPtr &GPS_msg)
 
 void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
 {
+    vio_lock.lock();
     vioQueue.push(pose_msg);
+    vio_lock.unlock();
     nav_msgs::Odometry::ConstPtr first_pose = vioQueue.front();
     double t = first_pose->header.stamp.toSec(); 
     if (!isInitial)
@@ -158,20 +161,7 @@ void vio_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
             globalEstimator.inputGPS(t, latitude, longitude, altitude, pos_accuracy);
             gpsQueue.pop();
             vioQueue.pop();
-            /*
-            accept_origin<< global_t.x(),global_t.y(),global_t.z(),1;
-            media = extrinsicPara * accept_origin;
-            geometry_msgs::PoseStamped global_pose_stamped;
-            global_pose_stamped.pose.position.x = media(0);
-            global_pose_stamped.pose.position.y = media(1);
-            global_pose_stamped.pose.position.z = media(2);
-            geometry_msgs::PoseStamped global_pose_stamped;
-            global_pose_stamped.pose.position.x = global_t.x();
-            global_pose_stamped.pose.position.y = global_t.y();
-            global_pose_stamped.pose.position.z = global_t.z();
-            global_path.poses.push_back(global_pose_stamped);
-            */
-                // write result to file
+            // write result to file
             std::ofstream foutC("/home/weining/summer_intern/gps_aided_vins/src/GPS-aided-VINS-Mono-for-autunomous-driving/path_recorder/global_optimize.csv", ios::app);
             foutC.setf(ios::fixed, ios::floatfield);
             foutC.precision(0);
@@ -227,7 +217,7 @@ int main(int argc, char **argv)
                     0, 0, 0, 1;
 
 
-    ros::Subscriber sub_GPS = n.subscribe("/navsat/fix", 100, GPS_callback);
+    ros::Subscriber sub_GPS = n.subscribe("/ublox_node/fix", 100, GPS_callback);
     ros::Subscriber sub_vio = n.subscribe("/vins_estimator/odometry", 1000, vio_callback);
     pub_global_path = n.advertise<nav_msgs::Path>("global_path", 100);
     pub_global_odometry = n.advertise<nav_msgs::Odometry>("global_odometry", 100);
